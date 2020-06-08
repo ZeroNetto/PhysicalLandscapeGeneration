@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Components.Map;
 using Helpers.Structires;
@@ -8,30 +7,30 @@ using Random = UnityEngine.Random;
 
 namespace Helpers
 {
-    public class ErodeHelper
+    public class GeneralHelper
     {
         public static ComputeBuffer GetBufferFor<T>(
             List<T> collection,
-            ComputeShader erosion,
+            ComputeShader shader,
             string bufferName,
             int stride = sizeof(int)) where T : struct
         {
             var collectionBuffer = new ComputeBuffer(collection.Count, stride);
             collectionBuffer.SetData(collection);
-            erosion.SetBuffer(0, bufferName, collectionBuffer);
+            shader.SetBuffer(0, bufferName, collectionBuffer);
 
             return collectionBuffer;
         }
         
         public static ComputeBuffer GetBufferFor<T>(
             T[] collection,
-            ComputeShader erosion,
+            ComputeShader shader,
             string bufferName,
             int stride = sizeof(int))
         {
             var collectionBuffer = new ComputeBuffer(collection.Length, stride);
             collectionBuffer.SetData(collection);
-            erosion.SetBuffer(0, bufferName, collectionBuffer);
+            shader.SetBuffer(0, bufferName, collectionBuffer);
 
             return collectionBuffer;
         }

@@ -3,6 +3,7 @@ using Components.Map;
 using Leopotam.Ecs;
 using Components.Events;
 using Extensions;
+using Helpers;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -11,19 +12,19 @@ namespace Systems.MapSystems
     public class GenerateHeightMapSystem : IEcsRunSystem
     {
         private EcsFilter<GenerateHeightMapEvent, MapInfoComponent> generateMaps;
-        private bool PrintTimers;
-        private bool OnGPU;
-        
+
         public void Run()
         {
             foreach (var mapId in generateMaps)
             {
                 var mapEntity = generateMaps.GetEntity(mapId);
+                var printTimers = mapEntity.Get<GenerateHeightMapEvent>().PrintTimers;
+                var onGPU = mapEntity.Get<GenerateHeightMapEvent>().OnGPU;
                 var mapInfo = mapEntity.Get<MapInfoComponent>();
                 
                 var sw = new System.Diagnostics.Stopwatch ();
                 sw.Start();
-                if (OnGPU)
+                if (onGPU)
                     GenerateOnGPU(mapInfo);
                 else
                     GenerateOnCPU(mapInfo);
@@ -32,23 +33,55 @@ namespace Systems.MapSystems
                 sw.Reset();
 
                 mapEntity.Del<GenerateHeightMapEvent>();
-                mapEntity.Get<ConstructMeshEvent>();
+                mapEntity.Get<ConstructMeshEvent>() = new ConstructMeshEvent() {PrintTimers = printTimers};
 
-                if (PrintTimers)
+                if (printTimers)
                     Debug.Log($"{mapInfo.MapSizeWithBorder}x{mapInfo.MapSizeWithBorder} heightmap generated in {generateHeightMapTime}ms");
             }
         }
 
         private void GenerateOnGPU(MapInfoComponent mapInfo)
         {
-            //TODO
+            const int seedRange = 10000;
+            var seed = mapInfo.RandomizeSeed ? Random.Range(-seedRange, seedRange) : mapInfo.Seed;
+            var numberGenerator = new System.Random(seed);
+            const int coordinatesRange = 1000;
+            const int floatToIntMultiplier = 1000;
+            
+            var octaveCount = mapInfo.OctaveCount;
+            var map = mapInfo.Map;
+            var heightMapComputeShader = mapInfo.HeightMapComputeShader;
+            var minMaxHeight = new[]{ floatToIntMultiplier * octaveCount, 0 };
+
+            var offsets = new Vector2[octaveCount];
+            for (var i = 0; i < octaveCount; i++)
+                offsets[i] = new Vector2 (
+                    numberGenerator.Next(-coordinatesRange, coordinatesRange),
+                    numberGenerator.Next (-coordinatesRange, coordinatesRange));
+            
+            var offsetsBuffer = GeneralHelper.GetBufferFor(offsets, heightMapComputeShader, "offsets", sizeof (float) * 2);
+            var mapBuffer = GeneralHelper.GetBufferFor(map, heightMapComputeShader, "heightMap");
+            var minMaxBuffer = GeneralHelper.GetBufferFor(minMaxHeight, heightMapComputeShader, "minMax");
+            
+            FillParameters(heightMapComputeShader, mapInfo);
+            heightMapComputeShader.Dispatch (0, Math.Min(map.Length, 65535), 1, 1);
+
+            mapBuffer.GetData (map);
+            minMaxBuffer.GetData (minMaxHeight);
+            GeneralHelper.ReleaseBuffers(new []{ mapBuffer, minMaxBuffer, offsetsBuffer });
+
+            var minValue = minMaxHeight[0] / (float) floatToIntMultiplier;
+            var maxValue = minMaxHeight[1] / (float) floatToIntMultiplier;
+
+            map.InverseLerp(minValue, maxValue);
         }
 
         private void GenerateOnCPU(MapInfoComponent mapInfo)
         {
             const int seedRange = 10000;
+            var seed = mapInfo.RandomizeSeed ? Random.Range(-seedRange, seedRange) : mapInfo.Seed;
+            var numberGenerator = new System.Random(seed);
             const int coordinatesRange = 1000;
-            const float tolerance = 0.01f;
 
             var mapSize = mapInfo.MapSizeWithBorder;
             var octaveCount = mapInfo.OctaveCount;
@@ -56,8 +89,6 @@ namespace Systems.MapSystems
             var persistence = mapInfo.Persistence;
             var lacunarity = mapInfo.Lacunarity;
             var map = mapInfo.Map;
-            var seed = mapInfo.RandomizeSeed ? Random.Range(-seedRange, seedRange) : mapInfo.Seed;
-            var numberGenerator = new System.Random(seed);
 
             var offsets = new Vector2[octaveCount];
             for (var i = 0; i < octaveCount; i++)
@@ -79,7 +110,7 @@ namespace Systems.MapSystems
                     for (var i = 0; i < octaveCount; i++)
                     {
                         var p = offsets[i] + new Vector2(x / (float) mapSize, y / (float) mapSize) * scale;
-                        noiseValue = Mathf.PerlinNoise(p.x, p.y) * weight;
+                        noiseValue += Mathf.PerlinNoise(p.x, p.y) * weight;
                         weight *= persistence;
                         scale *= lacunarity;
                     }
@@ -90,8 +121,20 @@ namespace Systems.MapSystems
                 }
             }
             
-            if (Math.Abs(maxValue - minValue) > tolerance)
-                map.Normalize(minValue, maxValue);
+            map.Normalize(minValue, maxValue);
+        }
+
+        private void FillParameters(
+            ComputeShader heightMapComputeShader,
+            MapInfoComponent mapInfo,
+            int floatToIntMultiplier = 1000)
+        {
+            heightMapComputeShader.SetInt ("mapSize", mapInfo.MapSizeWithBorder);
+            heightMapComputeShader.SetInt ("octaves", mapInfo.OctaveCount);
+            heightMapComputeShader.SetFloat ("lacunarity", mapInfo.Lacunarity);
+            heightMapComputeShader.SetFloat ("persistence", mapInfo.Persistence);
+            heightMapComputeShader.SetFloat ("scaleFactor", mapInfo.InitialScale);
+            heightMapComputeShader.SetInt ("floatToIntMultiplier", floatToIntMultiplier);
         }
     }
 }

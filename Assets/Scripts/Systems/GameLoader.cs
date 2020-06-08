@@ -8,9 +8,8 @@ namespace Systems
 {
     public class GameLoader : MonoBehaviour
     {
-        //public Levels ChooseLevel;
-        public bool OnGPU = false;
-        public bool PrintTimers = false;
+        public bool OnGPU;
+        public bool PrintTimers;
         
         [Header ("Mesh Parameters")]
         public int MapSize = 255;
@@ -46,8 +45,6 @@ namespace Systems
         public float Lacunarity = 2;
         public float InitialScale = 2;
 
-        public bool UseComputeShader = true;
-
         private EcsWorld world;
         private EcsEntity map;
         private EcsSystems systems;
@@ -56,8 +53,12 @@ namespace Systems
         {
             map = world.NewEntity();
             FillParameters(map);
-            
-            map.Get<GenerateHeightMapEvent>();
+
+            map.Get<GenerateHeightMapEvent>() = new GenerateHeightMapEvent()
+            {
+                OnGPU = OnGPU,
+                PrintTimers = PrintTimers
+            };
         }
 
         public void Erode()
@@ -65,8 +66,8 @@ namespace Systems
             if (map.IsNull() || !map.IsAlive())
                 return;
             
-            FillParameters(map);
-            map.Get<ErodeEvent>();
+            FillParameters(map, true);
+            map.Get<ErodeEvent>() = new ErodeEvent() { PrintTimers = PrintTimers };
         }
 
         public void Start()
@@ -76,11 +77,7 @@ namespace Systems
             systems = new EcsSystems(world)
                 .Add(new GenerateHeightMapSystem())
                 .Add(new ErodeSystem())
-                .Add(new ConstructMeshSystem())
-                .Inject(OnGPU)
-                .Inject(PrintTimers);
-            
-            //LoadLevel();
+                .Add(new ConstructMeshSystem());
 
             systems.ProcessInjects();
             systems.Init();
@@ -97,33 +94,14 @@ namespace Systems
             world.Destroy();
         }
 
-        // private void LoadLevel()
-        // {
-        //     switch (ChooseLevel)
-        //     {
-        //         case Levels.Level_1:
-        //         {
-        //             systems.Add(new Map1InitSystem());
-        //             break;
-        //         }
-        //         case Levels.Level_2:
-        //         {
-        //             //systems.Add(new Map2InitSystem())
-        //             break;
-        //         }
-        //         default:
-        //         {
-        //             systems.Add(new Map1InitSystem());
-        //             break;
-        //         }
-        //     }
-        // }
-
-        private void FillParameters(EcsEntity map)
+        private void FillParameters(EcsEntity map, bool isErode = false)
         {
-            FillMeshParameters(map);
+            if (!isErode)
+            {
+                FillMeshParameters(map);
+                FillMapParameters(map);
+            }
             FillErosionParameters(map);
-            FillMapParameters(map);
         }
         
         private void FillMeshParameters(EcsEntity map)
@@ -169,7 +147,6 @@ namespace Systems
                 HeightMapComputeShader = HeightMapComputeShader,
                 InitialScale = InitialScale,
                 RandomizeSeed = RandomizeSeed,
-                UseComputerShader = UseComputeShader,
                 Map = new float[(MapSize + ErosionBrushRadius * 2) * (MapSize + ErosionBrushRadius * 2)]
             };
         }

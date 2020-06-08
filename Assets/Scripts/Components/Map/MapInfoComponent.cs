@@ -10,7 +10,6 @@ namespace Components.Map
         public float Persistence { get; set; }
         public float Lacunarity { get; set; }
         public float InitialScale { get; set; }
-        public bool UseComputerShader { get; set; }
         public ComputeShader HeightMapComputeShader { get; set; }
         public float[] Map { get; set; }
         public int MapSizeWithBorder { get; set; }

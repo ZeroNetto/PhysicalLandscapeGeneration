@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using Components.Events;
 using Components.Map;
+using Helpers;
 using Leopotam.Ecs;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -10,13 +12,13 @@ namespace Systems.MapSystems
     public class ConstructMeshSystem: IEcsRunSystem
     {
         private EcsFilter<ConstructMeshEvent, MapInfoComponent, MeshParametersComponent, ErosionParametersComponent> constructMeshes;
-        private bool PrintTimers;
-        
+
         public void Run()
         {
             foreach (var id in constructMeshes)
             {
                 var constructEntity = constructMeshes.GetEntity(id);
+                var printTimers = constructEntity.Get<ConstructMeshEvent>().PrintTimers;
                 var mapInfo = constructEntity.Get<MapInfoComponent>();
                 var meshParameters = constructEntity.Get<MeshParametersComponent>();
                 var erosionParameters = constructEntity.Get<ErosionParametersComponent>();
@@ -27,7 +29,7 @@ namespace Systems.MapSystems
                 var constructMeshTime = sw.ElapsedMilliseconds;
                 sw.Reset();
                 
-                if (PrintTimers)
+                if (printTimers)
                     Debug.Log ($"Mesh constructed in {constructMeshTime}ms");
                 
                 constructEntity.Del<ConstructMeshEvent>();
@@ -58,39 +60,39 @@ namespace Systems.MapSystems
                 pos += Vector3.up * normalizedHeight * meshParameters.ElevationScale;
                 verts[meshMapIndex] = pos;
                 
-                if (x != mapSize - 1 && y != mapSize - 1)
-                    ConstructTriangles( x, y, mapSize, meshMapIndex, triangles);
+                if (ConstructMeshHelper.IsInside(mapSize, x, y))
+                    ConstructMeshHelper.ConstructTriangles(x, y, mapSize, meshMapIndex, triangles);
             }
             
-            var mesh = mapInfo.Mesh;
-            if (mesh == null)
-                mesh = new Mesh();
+            if (mapInfo.Mesh == null)
+                mapInfo.Mesh = new Mesh();
             else
-                mesh.Clear();
+                mapInfo.Mesh.Clear();
 
-            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            mesh.vertices = verts;
-            mesh.triangles = triangles;
-            mesh.RecalculateNormals();
+            mapInfo.Mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            mapInfo.Mesh.vertices = verts;
+            mapInfo.Mesh.triangles = triangles;
+            mapInfo.Mesh.RecalculateNormals();
                 
             var (meshFilter, meshRenderer) = AssignMeshComponents ();
-            meshFilter.sharedMesh = mesh;
+            meshFilter.sharedMesh = mapInfo.Mesh;
             meshRenderer.sharedMaterial = meshParameters.Material;
-            
-            meshParameters.Material.SetFloat("_MaxHeight", meshParameters.ElevationScale);
         }
 
         private Tuple<MeshFilter, MeshRenderer> AssignMeshComponents()
         {
-            const string meshHolderName = "MeshHolder";
-            var parentTransform = Object.FindObjectOfType<Transform>().parent.GetComponent<Transform>();
-            var meshHolder = parentTransform.Find(meshHolderName);
+            const string meshHolderName = "Mesh Holder";
+            var terrainTransform = Object
+                .FindObjectsOfType<Transform>()
+                .FirstOrDefault(o => o.name == "Terrain");
+            var meshHolder = terrainTransform.Find(meshHolderName);
             if (meshHolder == null)
             {
                 meshHolder = new GameObject(meshHolderName).transform;
-                meshHolder.transform.parent = parentTransform;
-                meshHolder.transform.localPosition = Vector3.zero;
-                meshHolder.transform.localRotation = Quaternion.identity;
+                var transform = meshHolder.transform;
+                transform.parent = terrainTransform;
+                transform.localPosition = Vector3.zero;
+                transform.localRotation = Quaternion.identity;
             }
 
             var meshFilter = meshHolder.gameObject.GetComponent<MeshFilter>();
@@ -101,19 +103,6 @@ namespace Systems.MapSystems
                 meshRenderer = meshHolder.gameObject.AddComponent<MeshRenderer> ();
             
             return Tuple.Create(meshFilter, meshRenderer);
-        }
-
-        private void ConstructTriangles(int x, int y, int mapSize, int meshMapIndex, int[] triangles)
-        {
-            var shift = (y * (mapSize - 1) + x) * 3 * 2;
-
-            triangles[shift + 0] = meshMapIndex + mapSize;
-            triangles[shift + 1] = meshMapIndex + mapSize + 1;
-            triangles[shift + 2] = meshMapIndex;
-
-            triangles[shift + 3] = meshMapIndex + mapSize + 1;
-            triangles[shift + 4] = meshMapIndex + 1;
-            triangles[shift + 5] = meshMapIndex;
         }
     }
 }

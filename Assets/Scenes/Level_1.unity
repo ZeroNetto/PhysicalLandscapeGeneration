@@ -362,6 +362,7 @@ MonoBehaviour:
   Scale: 20
   ElevationScale: 10
   Material: {fileID: 2100000, guid: d47bc177346596942a2190d0100852c0, type: 2}
+  Erosion: {fileID: 7200000, guid: 9e1fafbe40b0d084fb03d67820be0a02, type: 3}
   ErosionIterationsCount: 50000
   ErosionBrushRadius: 3
   MaxLifetime: 30
@@ -374,6 +375,8 @@ MonoBehaviour:
   StartSpeed: 1
   StartWater: 1
   Inertia: 0.3
+  HeightMapComputeShader: {fileID: 7200000, guid: 89e9eb22d317bcc469d4b31af99770ae,
+    type: 3}
   Seed: 0
   RandomizeSeed: 0
   OctaveCount: 7
@@ -381,8 +384,6 @@ MonoBehaviour:
   Lacunarity: 2
   InitialScale: 2
   UseComputeShader: 0
-  HeightMapComputeShader: {fileID: 7200000, guid: 89e9eb22d317bcc469d4b31af99770ae,
-    type: 3}
 --- !u!4 &1318401272
 Transform:
   m_ObjectHideFlags: 0
@@ -409,7 +410,7 @@ GameObject:
   - component: {fileID: 1543057525}
   - component: {fileID: 1543057524}
   m_Layer: 0
-  m_Name: MeshHolder
+  m_Name: Mesh Holder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

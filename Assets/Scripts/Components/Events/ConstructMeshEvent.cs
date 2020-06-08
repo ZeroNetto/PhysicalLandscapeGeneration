@@ -2,6 +2,6 @@
 {
     public struct ConstructMeshEvent
     {
-        
+        public bool PrintTimers { get; set; }
     }
 }
