@@ -12,13 +12,13 @@ namespace Systems.MapSystems
     public class ErodeSystem : IEcsRunSystem
     {
         private EcsFilter<ErodeEvent, ErosionParametersComponent, MeshParametersComponent, MapInfoComponent> erosionMaps;
-        private bool PrintTimers;
 
         public void Run()
         {
             foreach (var erosionId in erosionMaps)
             {
                 var erosionEntity = erosionMaps.GetEntity(erosionId);
+                var printTimers = erosionEntity.Get<ErodeEvent>().PrintTimers;
                 var erosionParameters = erosionEntity.Get<ErosionParametersComponent>();
                 var meshParameters = erosionEntity.Get<MeshParametersComponent>();
                 var mapInfo = erosionEntity.Get<MapInfoComponent>();
@@ -26,20 +26,21 @@ namespace Systems.MapSystems
                 var sw = new System.Diagnostics.Stopwatch();
                 sw.Start();
                 
-                var brush = ErodeHelper.CreateBrush(erosionParameters, meshParameters.MapSize);
+                var brush = GeneralHelper.CreateBrush(erosionParameters, meshParameters.MapSize);
                 var brushShader = new BrushShader()
                 {
-                    IndexBuffer = ErodeHelper.GetBufferFor(brush.IndexOffsets, erosionParameters.Erosion,
+                    IndexBuffer = GeneralHelper.GetBufferFor(brush.IndexOffsets, erosionParameters.Erosion,
                         "brushIndices"),
                     WeightBuffer =
-                        ErodeHelper.GetBufferFor(brush.Weights, erosionParameters.Erosion, "brushWeights")
+                        GeneralHelper.GetBufferFor(brush.Weights, erosionParameters.Erosion, "brushWeights")
                 };
-                var randomIndices = ErodeHelper.GenerateIndices(
+                var randomIndices = GeneralHelper.GenerateIndices(
                     erosionParameters.ErosionIterationCount,
                     erosionParameters.ErosionBrushRadius,
                     meshParameters.MapSize);
-                var randomIndexBuffer = ErodeHelper.GetBufferFor(randomIndices, erosionParameters.Erosion, "randomIndices");
-                var mapBuffer = ErodeHelper.GetBufferFor(mapInfo.Map, erosionParameters.Erosion, "map");
+                var randomIndexBuffer = GeneralHelper.GetBufferFor(randomIndices, erosionParameters.Erosion, "randomIndices");
+                var mapBuffer = GeneralHelper.GetBufferFor(mapInfo.Map, erosionParameters.Erosion, "map");
+                
                 SetErosionParameters(erosionParameters, mapInfo, brush);
                 
                 erosionParameters.Erosion.Dispatch(
@@ -48,7 +49,7 @@ namespace Systems.MapSystems
                     1, 
                     1);
                 
-                ErodeHelper.ReleaseBuffers(new List<ComputeBuffer>()
+                GeneralHelper.ReleaseBuffers(new List<ComputeBuffer>()
                 {
                     brushShader.IndexBuffer,
                     brushShader.WeightBuffer,
@@ -59,10 +60,11 @@ namespace Systems.MapSystems
                 var erosionTime = sw.ElapsedMilliseconds;
                 sw.Reset();
                 
-                if (PrintTimers)
+                if (printTimers)
                     Debug.Log ($"{erosionParameters.ErosionIterationCount} erosion iterations completed in {erosionTime}ms");
 
                 erosionEntity.Del<ErodeEvent>();
+                erosionEntity.Get<ConstructMeshEvent>() = new ConstructMeshEvent() {PrintTimers = printTimers};;
             }
         }
 

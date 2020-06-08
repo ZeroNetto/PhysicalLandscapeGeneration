@@ -2,5 +2,6 @@
 {
     public struct ErodeEvent
     {
+        public bool PrintTimers { get; set; }
     }
 }
