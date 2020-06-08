@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Components.Events;
 using Components.Map;
 using Helpers;
 using Helpers.Structires;
 using Leopotam.Ecs;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace Systems.MapSystems
 {
