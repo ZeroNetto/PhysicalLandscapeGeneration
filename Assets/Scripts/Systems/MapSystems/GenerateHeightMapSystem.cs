@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Components.Map;
 using Leopotam.Ecs;
 using Components.Events;
@@ -47,6 +48,7 @@ namespace Systems.MapSystems
             var numberGenerator = new System.Random(seed);
             const int coordinatesRange = 1000;
             const int floatToIntMultiplier = 1000;
+            const int maxThreadCount = 65535;
             
             var octaveCount = mapInfo.OctaveCount;
             var map = mapInfo.Map;
@@ -64,7 +66,7 @@ namespace Systems.MapSystems
             var minMaxBuffer = GeneralHelper.GetBufferFor(minMaxHeight, heightMapComputeShader, "minMax");
             
             FillParameters(heightMapComputeShader, mapInfo);
-            heightMapComputeShader.Dispatch (0, Math.Min(map.Length, 65535), 1, 1);
+            heightMapComputeShader.Dispatch (0, Math.Min(map.Length, maxThreadCount), 1, 1);
 
             mapBuffer.GetData (map);
             minMaxBuffer.GetData (minMaxHeight);

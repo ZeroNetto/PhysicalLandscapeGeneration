@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Components.Events;
 using Components.Map;
@@ -6,6 +7,7 @@ using Helpers;
 using Helpers.Structires;
 using Leopotam.Ecs;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Systems.MapSystems
 {
@@ -24,39 +26,9 @@ namespace Systems.MapSystems
                 var mapInfo = erosionEntity.Get<MapInfoComponent>();
 
                 var sw = new System.Diagnostics.Stopwatch();
+                
                 sw.Start();
-                
-                var brush = GeneralHelper.CreateBrush(erosionParameters, meshParameters.MapSize);
-                var brushShader = new BrushShader()
-                {
-                    IndexBuffer = GeneralHelper.GetBufferFor(brush.IndexOffsets, erosionParameters.Erosion,
-                        "brushIndices"),
-                    WeightBuffer =
-                        GeneralHelper.GetBufferFor(brush.Weights, erosionParameters.Erosion, "brushWeights")
-                };
-                var randomIndices = GeneralHelper.GenerateIndices(
-                    erosionParameters.ErosionIterationCount,
-                    erosionParameters.ErosionBrushRadius,
-                    meshParameters.MapSize);
-                var randomIndexBuffer = GeneralHelper.GetBufferFor(randomIndices, erosionParameters.Erosion, "randomIndices");
-                var mapBuffer = GeneralHelper.GetBufferFor(mapInfo.Map, erosionParameters.Erosion, "map");
-                
-                SetErosionParameters(erosionParameters, mapInfo, brush);
-                
-                erosionParameters.Erosion.Dispatch(
-                    0, 
-                    erosionParameters.ErosionIterationCount / 1024, 
-                    1, 
-                    1);
-                
-                GeneralHelper.ReleaseBuffers(new List<ComputeBuffer>()
-                {
-                    brushShader.IndexBuffer,
-                    brushShader.WeightBuffer,
-                    mapBuffer,
-                    randomIndexBuffer
-                });
-
+                Erode(erosionParameters, meshParameters, mapInfo);
                 var erosionTime = sw.ElapsedMilliseconds;
                 sw.Reset();
                 
@@ -66,6 +38,46 @@ namespace Systems.MapSystems
                 erosionEntity.Del<ErodeEvent>();
                 erosionEntity.Get<ConstructMeshEvent>() = new ConstructMeshEvent() {PrintTimers = printTimers};;
             }
+        }
+
+        private void Erode(
+            ErosionParametersComponent erosionParameters,
+            MeshParametersComponent meshParameters,
+            MapInfoComponent mapInfo)
+        {
+            const int maxThreadCount = 65535;
+            
+            var brush = GeneralHelper.CreateBrush(erosionParameters, meshParameters.MapResolution);
+            var brushShader = new BrushShader()
+            {
+                IndexBuffer = GeneralHelper.GetBufferFor(brush.IndexOffsets, erosionParameters.Erosion,
+                    "brushIndices"),
+                WeightBuffer =
+                    GeneralHelper.GetBufferFor(brush.Weights, erosionParameters.Erosion, "brushWeights")
+            };
+            var randomIndices = GeneralHelper.GenerateIndices(
+                erosionParameters.ErosionIterationCount,
+                erosionParameters.ErosionBrushRadius,
+                meshParameters.MapResolution);
+            var randomIndexBuffer = GeneralHelper.GetBufferFor(randomIndices, erosionParameters.Erosion, "randomIndices");
+            var mapBuffer = GeneralHelper.GetBufferFor(mapInfo.Map, erosionParameters.Erosion, "map");
+
+            SetErosionParameters(erosionParameters, mapInfo, brush);
+                
+            erosionParameters.Erosion.Dispatch(
+                0, 
+                Math.Min(erosionParameters.ErosionIterationCount / 1024, maxThreadCount), 
+                1, 
+                1);
+            mapBuffer.GetData(mapInfo.Map);
+                
+            GeneralHelper.ReleaseBuffers(new List<ComputeBuffer>()
+            {
+                brushShader.IndexBuffer,
+                brushShader.WeightBuffer,
+                mapBuffer,
+                randomIndexBuffer
+            });
         }
 
         private void SetErosionParameters(

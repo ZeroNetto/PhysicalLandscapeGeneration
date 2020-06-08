@@ -356,7 +356,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0c7d6fb589ef87478ea478623a5c63a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  OnGPU: 0
+  OnGPU: 1
   PrintTimers: 1
   MapSize: 255
   Scale: 20
@@ -378,12 +378,11 @@ MonoBehaviour:
   HeightMapComputeShader: {fileID: 7200000, guid: 89e9eb22d317bcc469d4b31af99770ae,
     type: 3}
   Seed: 0
-  RandomizeSeed: 0
+  RandomizeSeed: 1
   OctaveCount: 7
   Persistence: 0.5
   Lacunarity: 2
   InitialScale: 2
-  UseComputeShader: 0
 --- !u!4 &1318401272
 Transform:
   m_ObjectHideFlags: 0

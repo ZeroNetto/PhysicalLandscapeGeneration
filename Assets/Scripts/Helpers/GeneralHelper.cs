@@ -61,7 +61,7 @@ namespace Helpers
 
             return new Brush()
             {
-                Weights = brushWeights.Select(weight => weight /= weightSum).ToList(),
+                Weights = brushWeights.Select(weight => weight / weightSum).ToList(),
                 IndexOffsets = brushIndexOffsets
             };
         }

@@ -111,7 +111,7 @@ namespace Systems
                 Material = Material,
                 Scale = Scale,
                 ElevationScale = ElevationScale,
-                MapSize = MapSize,
+                MapResolution = MapSize,
             };
         }
 

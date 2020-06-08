@@ -41,7 +41,7 @@ namespace Systems.MapSystems
             MeshParametersComponent meshParameters,
             ErosionParametersComponent erosionParameters)
         {
-            var mapSize = meshParameters.MapSize;
+            var mapSize = meshParameters.MapResolution;
             var brushRadius = erosionParameters.ErosionBrushRadius;
             var verts = new Vector3[mapSize * mapSize];
             var triangles = new int[(mapSize - 1) * (mapSize - 1) * 6];
