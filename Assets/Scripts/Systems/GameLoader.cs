@@ -12,7 +12,7 @@ namespace Systems
         public bool PrintTimers;
         
         [Header ("Mesh Parameters")]
-        public int MapSize = 255;
+        public int MapResolution = 256;
         public float Scale = 20;
         public float ElevationScale = 10;
         public Material Material;
@@ -25,9 +25,12 @@ namespace Systems
         public int MaxLifetime = 30;
         public float SedimentCapacityFactor = 3;
         public float MinSedimentCapacity = .01f;
+        [Range (0, 1)]
         public float DepositSpeed = 0.3f;
+        [Range (0, 1)]
         public float ErodeSpeed = 0.3f;
 
+        [Range (0, 1)]
         public float EvaporateSpeed = .01f;
         public float Gravity = 4;
         public float StartSpeed = 1;
@@ -111,7 +114,7 @@ namespace Systems
                 Material = Material,
                 Scale = Scale,
                 ElevationScale = ElevationScale,
-                MapResolution = MapSize,
+                MapResolution = MapResolution,
             };
         }
 
@@ -139,7 +142,7 @@ namespace Systems
         {
             map.Get<MapInfoComponent>() = new MapInfoComponent()
             {
-                MapSizeWithBorder = MapSize + ErosionBrushRadius * 2,
+                MapSizeWithBorder = MapResolution + ErosionBrushRadius * 2,
                 Lacunarity = Lacunarity,
                 Persistence = Persistence,
                 Seed = Seed,
@@ -147,7 +150,7 @@ namespace Systems
                 HeightMapComputeShader = HeightMapComputeShader,
                 InitialScale = InitialScale,
                 RandomizeSeed = RandomizeSeed,
-                Map = new float[(MapSize + ErosionBrushRadius * 2) * (MapSize + ErosionBrushRadius * 2)]
+                Map = new float[(MapResolution + ErosionBrushRadius * 2) * (MapResolution + ErosionBrushRadius * 2)]
             };
         }
     }
