@@ -84,5 +84,29 @@ namespace Helpers
             foreach (var buffer in buffers)
                 buffer.Release();
         }
+        
+        public static float GetPerlinNoiseValue(
+            Vector2[] offsets,
+            int x, 
+            int y,
+            float initialScale,
+            int mapSize,
+            float persistence,
+            float lacunarity)
+        {
+            var noiseValue = 0f;
+            var scale = initialScale;
+            var weight = 1f;
+            
+            foreach (var offset in offsets)
+            {
+                var p = offset + new Vector2(x / (float) mapSize, y / (float) mapSize) * scale;
+                noiseValue += Mathf.PerlinNoise(p.x, p.y) * weight;
+                weight *= persistence;
+                scale *= lacunarity;
+            }
+
+            return noiseValue;
+        }
     }
 }

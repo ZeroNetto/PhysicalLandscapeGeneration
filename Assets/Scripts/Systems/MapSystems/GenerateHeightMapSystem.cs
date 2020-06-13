@@ -104,17 +104,8 @@ namespace Systems.MapSystems
             {
                 for (var x = 0; x < mapSize; x++)
                 {
-                    var noiseValue = 0f;
-                    var scale = initialScale;
-                    var weight = 1f;
-
-                    for (var i = 0; i < octaveCount; i++)
-                    {
-                        var p = offsets[i] + new Vector2(x / (float) mapSize, y / (float) mapSize) * scale;
-                        noiseValue += Mathf.PerlinNoise(p.x, p.y) * weight;
-                        weight *= persistence;
-                        scale *= lacunarity;
-                    }
+                    var noiseValue = GeneralHelper.GetPerlinNoiseValue(
+                        offsets, x, y, initialScale, mapSize, persistence, lacunarity);
 
                     map[y * mapSize + x] = noiseValue;
                     minValue = Mathf.Min(noiseValue, minValue);
@@ -124,6 +115,7 @@ namespace Systems.MapSystems
             
             map.Normalize(minValue, maxValue);
         }
+
 
         private void FillParameters(
             ComputeShader heightMapComputeShader,
