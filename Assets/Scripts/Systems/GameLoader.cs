@@ -1,4 +1,5 @@
-﻿using Systems.MapSystems;
+﻿using System.Linq;
+using Systems.MapSystems;
 using Components.Events;
 using Components.Map;
 using Leopotam.Ecs;
@@ -18,7 +19,6 @@ namespace Systems
         public Material Material;
 
         [Header("Erosion Parameters")]
-        public ComputeShader Erosion;
         public int ErosionIterationsCount = 50000;
         public int ErosionBrushRadius = 3;
 
@@ -39,7 +39,6 @@ namespace Systems
         public float Inertia = 0.3f;
         
         [Header ("HeightMapGenerator Parameters")]
-        public ComputeShader HeightMapComputeShader;
         public int Seed;
         public bool RandomizeSeed;
 
@@ -48,6 +47,9 @@ namespace Systems
         public float Lacunarity = 2;
         public float InitialScale = 2;
 
+        
+        private ComputeShader erosionShader;
+        private ComputeShader heightMapComputeShader;
         private EcsWorld world;
         private EcsEntity map;
         private EcsSystems systems;
@@ -72,9 +74,11 @@ namespace Systems
             FillParameters(map, true);
             map.Get<ErodeEvent>() = new ErodeEvent() { PrintTimers = PrintTimers };
         }
-
+        
         public void Start()
         {
+            erosionShader = Resources.Load<ComputeShader>("ComputeShaders/Erosion");
+            heightMapComputeShader = Resources.Load<ComputeShader>("ComputeShaders/HeightMap");
             world = new EcsWorld();
 
             systems = new EcsSystems(world)
@@ -133,7 +137,7 @@ namespace Systems
                 MinSedimentCapacity = MinSedimentCapacity,
                 SedimentCapacityFactor = SedimentCapacityFactor,
                 ErodeSpeed = ErodeSpeed,
-                Erosion = Erosion,
+                Erosion = erosionShader,
                 DepositSpeed = DepositSpeed
             };
         }
@@ -147,7 +151,7 @@ namespace Systems
                 Persistence = Persistence,
                 Seed = Seed,
                 OctaveCount = OctaveCount,
-                HeightMapComputeShader = HeightMapComputeShader,
+                HeightMapComputeShader = heightMapComputeShader,
                 InitialScale = InitialScale,
                 RandomizeSeed = RandomizeSeed,
                 Map = new float[(MapResolution + ErosionBrushRadius * 2) * (MapResolution + ErosionBrushRadius * 2)]
