@@ -357,8 +357,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   OnGPU: 1
-  PrintTimers: 1
-  MapSize: 255
+  PrintTimers: 0
+  MapResolution: 256
   Scale: 20
   ElevationScale: 10
   Material: {fileID: 2100000, guid: d47bc177346596942a2190d0100852c0, type: 2}
