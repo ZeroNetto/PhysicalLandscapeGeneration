@@ -362,7 +362,6 @@ MonoBehaviour:
   Scale: 20
   ElevationScale: 10
   Material: {fileID: 2100000, guid: d47bc177346596942a2190d0100852c0, type: 2}
-  Erosion: {fileID: 7200000, guid: 9e1fafbe40b0d084fb03d67820be0a02, type: 3}
   ErosionIterationsCount: 50000
   ErosionBrushRadius: 3
   MaxLifetime: 30
@@ -375,8 +374,6 @@ MonoBehaviour:
   StartSpeed: 1
   StartWater: 1
   Inertia: 0.3
-  HeightMapComputeShader: {fileID: 7200000, guid: 89e9eb22d317bcc469d4b31af99770ae,
-    type: 3}
   Seed: 0
   RandomizeSeed: 1
   OctaveCount: 7

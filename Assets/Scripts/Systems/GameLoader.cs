@@ -50,6 +50,7 @@ namespace Systems
         
         private ComputeShader erosionShader;
         private ComputeShader heightMapComputeShader;
+        
         private EcsWorld world;
         private EcsEntity map;
         private EcsSystems systems;
